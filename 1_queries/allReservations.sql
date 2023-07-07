@@ -1,8 +1,8 @@
-SELECT reservation_id,
+SELECT reservations.id,
 properties.title,
 reservations.start_date,
 properties.cost_per_night,
-AVG(property_reviews.rating)
+AVG(property_reviews.rating) AS average_rating
 
 FROM reservations
 
@@ -19,4 +19,3 @@ GROUP BY properties.id, reservations.id
 ORDER BY reservations.start_date 
 
 LIMIT 10;
-
