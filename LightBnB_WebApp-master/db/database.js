@@ -41,8 +41,7 @@ const getUserWithId = function(id) {
   return pool
     .query(queryCode, [id])
     .then(res => {
-      console.log(res.rows)
-      return res.rows
+      return res.rows[0]
     })
     .catch(err => {
       console.log("there is an error", err)
@@ -73,28 +72,50 @@ const addUser = function(user) {
     })
 }
 
-// /**
-//  * Add a new user to the database.
-//  * @param {{name: string, password: string, email: string}} user
-//  * @return {Promise<{}>} A promise to the user.
-//  */
-// const addUser = function (user) {
-//   const userId = Object.keys(users).length + 1;
-//   user.id = userId;
-//   users[userId] = user;
-//   return Promise.resolve(user);
-// };
-
 /// Reservations
+//function that pulls a guests reservation info based on their ID 
+const getAllReservations = function(guest_id) {
+  const queryCode = `
+  SELECT reservations.id,
+  properties.*,
+  reservations.start_date,
+  reservations.end_date,
+  AVG(property_reviews.rating) AS average_rating
+
+  FROM reservations
+
+  INNER JOIN properties
+  ON reservations.property_id = properties.id
+
+  INNER JOIN property_reviews
+  ON property_reviews.property_id = properties.id
+
+  WHERE reservations.guest_id = $1
+
+  GROUP BY properties.id, reservations.id
+
+  ORDER BY reservations.start_date 
+
+  LIMIT 10;
+  `
+  return pool.query(queryCode, [guest_id])
+    .then(res => {
+      return res.rows;
+    })
+    .catch(err => {
+      console.log("There is an error", err)
+    })
+}
+
 
 /**
- * Get all reservations for a single user.
- * @param {string} guest_id The id of the user.
- * @return {Promise<[{}]>} A promise to the reservations.
- */
-const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
-};
+//  * Get all reservations for a single user.
+//  * @param {string} guest_id The id of the user.
+//  * @return {Promise<[{}]>} A promise to the reservations.
+//  */
+// const getAllReservations = function (guest_id, limit = 10) {
+//   return getAllProperties(null, 2);
+// };
 
 /// Properties
 
@@ -105,14 +126,15 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 
-const run = `
-SELECT *
-FROM properties
-LIMIT $1
-`
 
 //function that pulls the list of all the properties
 const getAllProperties = function(options, limit = 10) {
+  const run = `
+  SELECT *
+  FROM properties
+  LIMIT $1
+  `
+
   return pool
     .query(run, [limit])
     .then((res) => {
