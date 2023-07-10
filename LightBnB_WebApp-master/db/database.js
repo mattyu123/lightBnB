@@ -11,15 +11,6 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
-/// Users
-
-/**
- * Get a single user from the database given their email.
- * @param {String} email The email of the user.
- * @return {Promise<{}>} A promise to the user.
- */
-
-
 //Function pulls the users info based on the email address provided
 const getUserWithEmail = function(email) {
   const queryCode = 
@@ -58,31 +49,41 @@ const getUserWithId = function(id) {
     })
 }
 
+//Function that adds a new user to the database
+const addUser = function(user) {
+  const name = user.name
+  const email = user.email
+  const password = user.password
 
+  const queryCode = 
+  `
+  INSERT INTO users (name, email, password)
+  VALUES ($1, $2, $3)
+  RETURNING *;
+  `
 
-/**
- * Get a single user from the database given their id.
- * @param {string} id The id of the user.
- * @return {Promise<{}>} A promise to the user.
- */
-//getUserWithId OLD CODE HERE
-// const getUserWithId = function (id) {
-//   return Promise.resolve(users[id]);
+  return pool
+    .query(queryCode, [name, email, password])
+    .then(res => {
+      console.log(res.rows)
+      return res.rows[0];
+    })
+    .catch(err => {
+      console.log("there is an error", err)
+    })
+}
+
+// /**
+//  * Add a new user to the database.
+//  * @param {{name: string, password: string, email: string}} user
+//  * @return {Promise<{}>} A promise to the user.
+//  */
+// const addUser = function (user) {
+//   const userId = Object.keys(users).length + 1;
+//   user.id = userId;
+//   users[userId] = user;
+//   return Promise.resolve(user);
 // };
-
-
-
-/**
- * Add a new user to the database.
- * @param {{name: string, password: string, email: string}} user
- * @return {Promise<{}>} A promise to the user.
- */
-const addUser = function (user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
-};
 
 /// Reservations
 
