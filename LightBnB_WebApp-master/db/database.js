@@ -64,7 +64,6 @@ const addUser = function(user) {
   return pool
     .query(queryCode, [name, email, password])
     .then(res => {
-      console.log(res.rows)
       return res.rows[0];
     })
     .catch(err => {
@@ -107,60 +106,90 @@ const getAllReservations = function(guest_id, limit=10) {
     })
 }
 
-//New getAllProperties function - This will dynamically filter out the code 
+//Select properties based on user search criteria
 const getAllProperties = function(options, limit = 10) {
-  const run = `
-  SELECT properties.id,
-  title,
-  cost_per_night,
+  const queryParams = [];
+  
+  //Basic code that is there no matter what
+  let queryCode = `
+  SELECT properties.*,
   AVG(property_reviews.rating) AS average_rating
 
   FROM properties
 
   INNER JOIN property_reviews
   ON properties.id = property_reviews.property_id
-
-  WHERE city = 'Vancouver'
-
-  GROUP BY properties.id
-
-  HAVING AVG(property_reviews.rating) >= 4
-
-  ORDER BY cost_per_night ASC
-
-  LIMIT 10;
   `
 
+  if (options.city) {
+    queryParams.push(`%${options.city}%`);
+    //If this length is 1, that means this is the WHERE clause, meaning we have to use WHERE
+    if (queryParams.length === 1) {
+      queryCode += `WHERE city LIKE $${queryParams.length}`
+    } else {
+      queryCode += `\nAND THIS IS GETTING ADDED city LIKE $${queryParams.length}`
+    }
+  }
+
+  if (options.owner_id) {
+    queryParams.push(`${options.owner_id}`);
+    if (queryParams.length === 1) {
+      queryCode += `WHERE owner_id = $${queryParams.length}`
+    } else {
+      queryCode += `\nAND owner_id = $${queryParams.length}`
+    }
+  }
+
+  if (options.minimum_price_per_night) {
+    queryParams.push(`${options.minimum_price_per_night*100}`);
+    if (queryParams.length === 1) {
+      queryCode += `WHERE cost_per_night >= $${queryParams.length}`
+    } else {
+      queryCode += `\nAND cost_per_night >= $${queryParams.length}`
+    }
+  }
+
+  if (options.maximum_price_per_night) {
+    queryParams.push(`${options.maximum_price_per_night*100}`)
+    if(queryParams.length === 1) {
+      queryCode += `WHERE cost_per_night <= $${queryParams.length}`
+    } else {
+      queryCode += `\nAND cost_per_night <= $${queryParams.length}`
+    }
+  }
+
+  if (options.minimum_rating) {
+    queryParams.push(`${options.minimum_rating}`)
+    queryCode += `
+    GROUP BY properties.id
+    HAVING AVG(property_reviews.rating) >= $${queryParams.length}
+    ORDER BY cost_per_night`;
+  }
+
+  //This code required no matter the number of where clauses
+
+  if (!options.minimum_rating) {
+      queryCode += `
+      GROUP BY properties.id
+      ORDER BY cost_per_night
+      `
+  }
+
+  console.log(queryCode, queryParams)
+
   return pool
-    .query(run)
-    .then()
+    .query(queryCode, queryParams)
+    .then(res => {
+      return res.rows;
+    })
     .catch((err) => {
       console.log("There is an error", err)
     })
 }
-
-
-/// Properties
-//function that pulls the list of all the properties -- Old code for getAll Properties
-// const getAllProperties = function(options, limit = 10) {
-//   const run = `
-//   SELECT *
-//   FROM properties
-//   LIMIT $1
-//   `
-//   return pool
-//     .query(run, [limit])
-//     .then((res) => {
-//       return res.rows;
-//       }
-//     )
-//     .catch((err) => {
-//       console.log("There is an error", err);
-//     })
-//   };
-
+  
 //Function that will add a new item to properties
 const addProperty = function (property) {
+  const owner_id = property.owner_id
   const title = property.title
   const description = property.description
   const thumbnail_photo_url = property.thumbnail_photo_url
@@ -177,34 +206,20 @@ const addProperty = function (property) {
 
   const queryCode = 
   `
-  INSERT INTO properties (title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+  INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
   RETURNING *;
   `
 
   return pool
-    .query(queryCode, [title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms])
+    .query(queryCode, [owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms])
     .then(res => {
       return res.rows[0];
     })
     .catch(err => {
       console.log("There is an error", err)
     })
-}
-
-///OLD ADD NEW PROPERTY FUNCTION
-
-// /**
-//  * Add a property to the database
-//  * @param {{}} property An object containing all of the property details.
-//  * @return {Promise<{}>} A promise to the property.
-//  */
-// const addProperty = function (property) {
-//   const propertyId = Object.keys(properties).length + 1;
-//   property.id = propertyId;
-//   properties[propertyId] = property;
-//   return Promise.resolve(property);
-// };
+};
 
 module.exports = {
   getUserWithEmail,
