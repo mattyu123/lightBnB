@@ -1,7 +1,7 @@
 SELECT reservations.id,
-properties.title,
+properties.*,
 reservations.start_date,
-properties.cost_per_night,
+reservations.end_date,
 AVG(property_reviews.rating) AS average_rating
 
 FROM reservations

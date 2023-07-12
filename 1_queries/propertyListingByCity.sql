@@ -1,6 +1,4 @@
-SELECT properties.id,
-title,
-cost_per_night,
+SELECT properties.*,
 AVG(property_reviews.rating) AS average_rating
 
 FROM properties
