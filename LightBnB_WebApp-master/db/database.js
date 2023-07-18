@@ -184,12 +184,14 @@ const getAllProperties = function(options, limit = 10) {
   
 //Function that will add a new item to properties
 const addProperty = function (property){
+  
+  
   const owner_id = property.owner_id;
   const title = property.title;
   const description = property.description;
   const thumbnail_photo_url = property.thumbnail_photo_url;
   const cover_photo_url = property.cover_photo_url;
-  const cost_per_night = property.cost_per_night;
+  const cost_per_night = property.cost_per_night * 100
   const street = property.street;
   const city = property.city;
   const province = property.province;
@@ -198,6 +200,8 @@ const addProperty = function (property){
   const parking_spaces = property.parking_spaces;
   const number_of_bathrooms = property.number_of_bathrooms;
   const number_of_bedrooms = property.number_of_bedrooms;
+
+  console.log(typeof cost_per_night)
 
   const queryCode =
   `
