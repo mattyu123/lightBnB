@@ -184,8 +184,6 @@ const getAllProperties = function(options, limit = 10) {
   
 //Function that will add a new item to properties
 const addProperty = function (property){
-  
-  
   const owner_id = property.owner_id;
   const title = property.title;
   const description = property.description;
